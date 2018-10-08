@@ -40,6 +40,12 @@ resp_attributes = {}
 debugbot = False
 debuglog = False
 
+#mp3
+drumrole_mp3 = "http://ikegami.tokyo/wp-content/uploads/2018/10/tympani-roll1.mp3"
+question_mp3 = "http://ikegami.tokyo/wp-content/uploads/2018/10/question1.mp3"
+correct_mp3 = "http://ikegami.tokyo/wp-content/uploads/2018/10/correct2.mp3"
+incorrect_mp3 = "http://ikegami.tokyo/wp-content/uploads/2018/10/incorrect1.mp3"
+
 # Quiz
 import data
 quiz = data._quiz
@@ -183,7 +189,10 @@ def quizin_intent_handler(clova_request):
             induction_h = clova_request.slot_value('InductionSlot_h')
             logger.info(str(induction)+str(induction_h))
             if len(induction) > 0 and len(induction_b) > 0 and len(induction_h) > 0 and induction == text['chanq']:
-                response = response_builder.simple_speech_text(text['q'])
+                values = []
+                values.append(speech_builder.url(question_mp3))
+                values.append(speech_builder.plain_text(text['q']))
+                response = response_builder.speech_list(values)
                 response = response_builder.add_reprompt(response, speech_builder.simple_speech(speech_builder.plain_text('３。。。。。２。。。。。１。。。')))
                 resp_attributes['answer'] =  attributes["quiz"]
                 response.session_attributes = resp_attributes
@@ -194,6 +203,7 @@ def quizin_intent_handler(clova_request):
             _texts.append("聞き取れなかったです・・・。もう少しだけClovaに近づいて言ってみてね。")
             _texts.append("ごめんなさい。わかりません・・・。周りは静かですか？もう一度言ってみてください。")
             response = response_builder.simple_speech_text(random.choice(_texts))
+            response = response_builder.add_reprompt(response, speech_builder.simple_speech(speech_builder.plain_text(text['chanq'] + 'を10回、言ってみて')))
             resp_attributes['quiz'] =  attributes["quiz"]
             response.session_attributes = resp_attributes
         return response
@@ -217,27 +227,35 @@ def answer_intent_handler(clova_request):
     else:
         return quiz_intent_handler(clova_request)
 
+    values = []
+    values.append(speech_builder.url(drumrole_mp3))
     if 'answer' in clova_request.slots_dict:
         if clova_request.slot_value('answer') in attributes["answer"]["a"]:
             logger.info(str(resp_attributes))
             prize = ['すごい！','アメージング！','素晴らしい！','なかなかやりますね','グレイト！']
-            text = "正解は・・・" + clova_request.slot_value('answer')+ "です！正解！"
+            text = "正解は・・・" + clova_request.slot_value('answer')+ "です！"
             text += f"・・{random.choice(prize)}！。"
             text += '次の問題もやりますか？'
             resp_attributes['cntq'] += 1
             resp_attributes['cnta'] += 1
+            values.append(speech_builder.url(correct_mp3))
+            values.append(speech_builder.plain_text(text))
         else:
             text = '・・んー、残念！はずれです！。'
-            text = "正解は・・・" + attributes["answer"]["a"][0] + "でした。"
+            text += "正解は・・・" + attributes["answer"]["a"][0] + "でした。"
             text += '次の問題もやりますか？'
             resp_attributes['cntq']+=1
+            values.append(speech_builder.url(incorrect_mp3))
+            values.append(speech_builder.plain_text(text))
     else:
         text = '・・んー、残念！はずれです！'
         text += "正解は・・・" + attributes["answer"]["a"][0] + "でした。"
         text += '次の問題もやる？'
         resp_attributes['cntq']+=1
+        values.append(speech_builder.url(incorrect_mp3))
+        values.append(speech_builder.plain_text(text))
 
-    response = response_builder.simple_speech_text(text)
+    response = response_builder.speech_list(values)
     response = response_builder.add_reprompt(response, speech_builder.simple_speech(speech_builder.plain_text('「はい」か「いいえ」で答えてね')))
     resp_attributes['retry'] =  True
     if 'history' in resp_attributes:
@@ -627,7 +645,7 @@ def getIntent(userId,event):
         item['intent'] = ""
         return item
     else:
-        logging.log(str(res))
+        logging.log(100,str(res))
         item = res.get('Item',{'intent':''})
         return item
 
