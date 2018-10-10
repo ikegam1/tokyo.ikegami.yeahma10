@@ -73,7 +73,7 @@ def send_line_bot(user, message):
     return res
 
 def send_line_bot_log(user, message):
-    user = LOG_PUSH_USER_TOKEN
+    user = log_push_user_token
     resp = {
                 'to': user,
                 'messages': [
@@ -370,7 +370,8 @@ def default_handler(clova_request):
     try:
         attributes = clova_request.session_attributes
     except AttributeError:
-        response.session_attributes = attributes 
+        pass
+        #response.session_attributes = attributes 
     resp_attributes = set_qacount(attributes)
     logger.info(clova_request)
     text = ''
@@ -499,7 +500,7 @@ def messaging_service():
     intent = getIntent(user_id, "reply")
     if 'date' in intent:
         postDate = intent['date']
-        if datetime.strptime(postDate , '%Y/%m/%d %H:%M:%S') > datetime.now() - timedelta(hours=1):
+        if datetime.strptime(postDate , '%Y/%m/%d %H:%M:%S') > datetime.now() - timedelta(hours=8):
             strIntent = intent['intent']
             _i = intent['induction'] 
             _q = intent['quiz'] 
@@ -509,7 +510,7 @@ def messaging_service():
     if re.compile("こんにちは|Hello|こんばんは|おはよう").search(message['text']):
         text = "こんにちは！言えまてんボットです。よろしくね。「使い方」というと説明するよ！"
         send_line_reply(reply_token, text)
-    elif re.compile("使い方|つかいかた|Help|ヘルプ").search(message['text']):
+    elif re.compile("^(使い方|つかいかた|Help|ヘルプ)").search(message['text']):
         mess =  u'言えまてんクイズの使い方です。最初にひとつの言葉を10回繰り返して言ってもらいます。\n'
         mess += u'次に、その言葉に少し関係のある問題を出すので答えを考えてね。問題は全部で' + str(len(quiz)) + 'つありますよ。\n'
         mess += u'答えがあっていると正解！です。もう一度問題をやるか聞かれたら「はい」か「いいえ」と答えてね。\n'
@@ -544,7 +545,7 @@ def messaging_service():
         mess.append( "参考にするね！")
         send_line_reply(reply_token,mess) 
         send_sns(str(jsonreq), _i, _q, _a, _n)
-    elif re.compile("応募|おうぼ|投稿").search(message['text']):
+    elif re.compile("^(応募|おうぼ|投稿)").search(message['text']):
         insert(user_id, "reply",  "post1", message,_i,_q,_a,_n)
         mess = []
         mess.append( "言えまてんクイズです。新しい問題を応募してます。面白い問題を考えた人は、1.10回繰り返す言葉(キリンとか)、2.問題、3.答えの3つを教えてね。")
